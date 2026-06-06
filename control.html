@@ -28,6 +28,7 @@ input:focus{border-color:var(--a);}
 .btn{width:100%;padding:12px 16px;border:none;border-radius:9px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:8px;}
 .btn:disabled{opacity:.35;cursor:not-allowed;}
 .btn:not(:disabled):hover{transform:translateY(-1px);filter:brightness(1.15);}
+.b-kick{background:linear-gradient(135deg,#059669,#10b981);color:#fff;}
 .b-open{background:linear-gradient(135deg,var(--g),#059669);color:#fff;}
 .b-start{background:linear-gradient(135deg,var(--a2),#0891b2);color:#000;font-size:12px;}
 .b-reset{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--r);}
@@ -58,6 +59,7 @@ input:focus{border-color:var(--a);}
 .urls code{color:var(--a2);background:rgba(6,182,212,.08);padding:2px 6px;border-radius:4px;font-size:11px;word-break:break-all;cursor:pointer;}
 .urls code:hover{background:rgba(6,182,212,.2);}
 .hint{font-size:12px;color:var(--mu);line-height:1.6;margin-top:8px;}
+.hint code{color:var(--a2);background:rgba(6,182,212,.1);padding:1px 5px;border-radius:3px;}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--b);border-radius:2px;}
 .div{height:1px;background:var(--b);margin:12px 0;}
 </style>
@@ -71,20 +73,29 @@ input:focus{border-color:var(--a);}
 </div>
 
 <div class="wrap">
-
-  <!-- LEFT: Control -->
   <div>
     <div class="card">
-      <div class="card-title">⚙ КЕРУВАННЯ</div>
+      <div class="card-title">⚙ ПІДКЛЮЧЕННЯ</div>
 
       <div class="fld">
         <label>Твій Kick канал</label>
         <input id="channel" placeholder="твій_нік" />
       </div>
+
       <div class="fld">
+        <label>Chatroom ID</label>
+        <input id="chatroom" placeholder="389201" />
+        <div class="hint">Знайди: <code>kick.com/api/v2/channels/НІК</code> → <code>"chatroom":{"id":</code></div>
+      </div>
+
+      <button class="btn b-kick" onclick="connectKick()">📡 ПІДКЛЮЧИТИ ДО KICK</button>
+
+      <div class="fld" style="margin-top:12px;">
         <label>Команда входу</label>
         <input id="cmd" value="!play" />
       </div>
+
+      <div class="div"></div>
 
       <div class="phase" id="phase">⬤ ОЧІКУВАННЯ</div>
       <div class="timer" id="reg-timer"><span class="l">РЕЄСТРАЦІЯ</span><span class="v" id="reg-val">60</span><span class="l">сек</span></div>
@@ -110,26 +121,21 @@ input:focus{border-color:var(--a);}
 
     <div class="card" style="margin-top:16px;">
       <div class="card-title">🔗 ПОСИЛАННЯ ДЛЯ OBS</div>
-      <div class="urls" id="urls">
-        Введи свій канал вище щоб згенерувати посилання
-      </div>
+      <div class="urls" id="urls">Введи канал щоб згенерувати</div>
       <div class="hint">Додай <b>Widget URL</b> як Browser Source в OBS (1280×720)</div>
     </div>
   </div>
 
-  <!-- RIGHT: Players + Chat -->
   <div>
     <div class="card">
       <div class="card-title">👥 УЧАСНИКИ <b id="pcnt">0</b></div>
       <div class="players" id="plist"></div>
     </div>
-
     <div class="card" style="margin-top:16px;">
       <div class="card-title">💬 KICK ЧАТ <b id="ccnt">0</b></div>
       <div class="chat" id="chat"></div>
     </div>
   </div>
-
 </div>
 
 <script>
@@ -140,45 +146,45 @@ let ws=null,channel='',phase='idle';
 const players=new Map();
 let regT=null,regS=60,raceT=null,raceS=65,chatN=0;
 
-// Pre-fill channel from URL or localStorage
 const urlCh=new URLSearchParams(location.search).get('channel');
-if(urlCh){document.getElementById('channel').value=urlCh;setTimeout(()=>connect(),300);}
+if(urlCh)document.getElementById('channel').value=urlCh;
 
-document.getElementById('channel').addEventListener('change',()=>{updURLs();connect();});
 document.getElementById('channel').addEventListener('input',updURLs);
 
 function updURLs(){
   const ch=document.getElementById('channel').value.trim().toLowerCase();
-  if(!ch){document.getElementById('urls').innerHTML='Введи свій канал вище';return;}
-  const widgetUrl=`${location.origin}/widget.html?channel=${ch}`;
-  const ctrlUrl=`${location.origin}/control.html?channel=${ch}`;
-  document.getElementById('urls').innerHTML=`
-    <div style="margin-bottom:8px;"><b style="color:var(--tx)">🎮 Widget (OBS):</b><br><code onclick="copyTxt('${widgetUrl}')">${widgetUrl}</code></div>
-    <div><b style="color:var(--tx)">🎛 Панель:</b><br><code onclick="copyTxt('${ctrlUrl}')">${ctrlUrl}</code></div>
-  `;
+  if(!ch){document.getElementById('urls').innerHTML='Введи канал';return;}
+  const w=`${location.origin}/widget.html?channel=${ch}`;
+  document.getElementById('urls').innerHTML=`<div><b style="color:var(--tx)">🎮 Widget (OBS):</b><br><code onclick="copyTxt('${w}')">${w}</code></div>`;
 }
-window.copyTxt=(t)=>{navigator.clipboard.writeText(t);clog('📋 Скопійовано!','sys');};
+window.copyTxt=(t)=>{navigator.clipboard.writeText(t);clog('📋 Скопійовано','sys');};
 
-// ── WebSocket ──
-function connect(){
+// ── Connect to server + Kick ──
+function connectKick(){
   channel=document.getElementById('channel').value.trim().toLowerCase();
-  if(!channel)return;
+  const cid=document.getElementById('chatroom').value.trim();
+  if(!channel){clog('❌ Введи канал','sys');return;}
+  if(!cid){clog('❌ Введи Chatroom ID','sys');return;}
+  updURLs();
   if(ws){ws.close();ws=null;}
   setPill('srv','','⟳ СЕРВЕР...');
-  ws=new WebSocket(`${WS_BASE}/ws?channel=${channel}&role=control`);
-  ws.onopen=()=>{setPill('srv','on','СЕРВЕР ✅');clog('Підключено до сервера','sys');};
-  ws.onclose=()=>{setPill('srv','err','СЕРВЕР ❌');setTimeout(connect,3000);};
+  // Connect with manual chatroom id in URL
+  ws=new WebSocket(`${WS_BASE}/ws?channel=${channel}&role=control&chatroom=${cid}`);
+  ws.onopen=()=>{
+    setPill('srv','on','СЕРВЕР ✅');
+    clog('Підключено до сервера','sys');
+    // Send manual chatroom to be safe
+    send({type:'set_chatroom',chatroomId:cid});
+  };
+  ws.onclose=()=>{setPill('srv','err','СЕРВЕР ❌');};
   ws.onerror=()=>{setPill('srv','err','ПОМИЛКА');};
   ws.onmessage=(e)=>{
     const m=JSON.parse(e.data);
-    if(m.type==='state'){
-      (m.players||[]).forEach(p=>addPlayerLocal(p.username,p.colorHex));
-      if(m.kickConnected)setPill('kick','on','KICK ✅');
-    }
+    if(m.type==='state'){(m.players||[]).forEach(p=>addPlayerLocal(p.username,p.colorHex));if(m.kickConnected)setPill('kick','on','KICK ✅');}
     if(m.type==='kick_status'){
       if(m.status==='connected')setPill('kick','on','KICK ✅');
       else if(m.status==='connecting')setPill('kick','','⟳ KICK...');
-      else if(m.status==='error')setPill('kick','err','KICK ❌');
+      else if(m.status==='error'){setPill('kick','err','KICK ❌');clog('❌ '+(m.msg||'Kick помилка'),'sys');}
     }
     if(m.type==='chat'){showChat(m.name,m.text);}
     if(m.type==='player_join'){addPlayerLocal(m.username,m.colorHex);}
@@ -188,16 +194,13 @@ function connect(){
 }
 function send(obj){if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify(obj));}
 
-// ── Game flow ──
 function openReg(){
-  if(!channel){clog('❌ Введи канал!','sys');return;}
+  if(!ws){clog('❌ Спочатку підключись до Kick','sys');return;}
   if(phase==='racing')return;
-  phase='registration';
-  players.clear();renderPlayers();
+  phase='registration';players.clear();renderPlayers();
   regS=parseInt(document.getElementById('rtime').value)||60;
   send({type:'open_registration',cmd:document.getElementById('cmd').value||'!play'});
-  setPhase('open','📋 РЕЄСТРАЦІЯ');
-  setPill('reg','on','РЕЄСТРАЦІЯ ✅');
+  setPhase('open','📋 РЕЄСТРАЦІЯ');setPill('reg','on','РЕЄСТРАЦІЯ ✅');
   document.getElementById('b-start').disabled=false;
   document.getElementById('reg-timer').style.display='flex';
   document.getElementById('reg-val').textContent=regS;
@@ -209,36 +212,24 @@ function startRace(){
   if(players.size<1){clog('❌ Немає гравців','sys');return;}
   clearInterval(regT);phase='racing';
   send({type:'start_race'});
-  setPhase('race','🏁 ГОНКА');
-  setPill('reg','off','РЕЄСТРАЦІЯ');
+  setPhase('race','🏁 ГОНКА');setPill('reg','off','РЕЄСТРАЦІЯ');
   document.getElementById('b-start').disabled=true;
   document.getElementById('reg-timer').style.display='none';
   raceS=65;document.getElementById('race-timer').style.display='flex';document.getElementById('race-val').textContent=raceS;
   clearInterval(raceT);
-  raceT=setInterval(()=>{raceS--;document.getElementById('race-val').textContent=raceS;if(raceS<=0){clearInterval(raceT);}},1000);
+  raceT=setInterval(()=>{raceS--;document.getElementById('race-val').textContent=raceS;if(raceS<=0)clearInterval(raceT);},1000);
   clog('🚀 Гонка почалась!','sys');
 }
-function onRaceEnd(order){clearInterval(raceT);phase='finished';setPhase('done','🏆 ФІНІШ');document.getElementById('race-timer').style.display='none';clog('🏁 Фініш!','sys');(order||[]).forEach((n,i)=>clog(`${'🥇🥈🥉'[i]||'▪'} #${i+1} ${n}`,'join'));}
+function onRaceEnd(order){clearInterval(raceT);phase='finished';setPhase('done','🏆 ФІНІШ');document.getElementById('race-timer').style.display='none';(order||[]).forEach((n,i)=>clog(`${'🥇🥈🥉'[i]||'▪'} #${i+1} ${n}`,'join'));}
 function resetGame(){clearInterval(regT);clearInterval(raceT);phase='idle';players.clear();renderPlayers();send({type:'reset'});setPhase('','⬤ ОЧІКУВАННЯ');setPill('reg','off','РЕЄСТРАЦІЯ');document.getElementById('b-start').disabled=true;document.getElementById('reg-timer').style.display='none';document.getElementById('race-timer').style.display='none';clog('Скинуто','sys');}
 
-// ── Players ──
-function addPlayerLocal(name,color){
-  if(players.has(name))return;
-  players.set(name,{color:color||COLS[players.size%COLS.length]});
-  renderPlayers();
-}
-function renderPlayers(){
-  const list=document.getElementById('plist');list.innerHTML='';let i=0;
-  players.forEach((d,name)=>{i++;const div=document.createElement('div');div.className='pi';div.innerHTML=`<span class="pi-dot" style="background:${d.color};color:${d.color}"></span><span class="pi-name">${esc(name)}</span><span class="pi-num">#${i}</span>`;list.appendChild(div);});
-  document.getElementById('pcnt').textContent=players.size;
-}
+function addPlayerLocal(name,color){if(players.has(name))return;players.set(name,{color:color||COLS[players.size%COLS.length]});renderPlayers();}
+function renderPlayers(){const list=document.getElementById('plist');list.innerHTML='';let i=0;players.forEach((d,name)=>{i++;const div=document.createElement('div');div.className='pi';div.innerHTML=`<span class="pi-dot" style="background:${d.color};color:${d.color}"></span><span class="pi-name">${esc(name)}</span><span class="pi-num">#${i}</span>`;list.appendChild(div);});document.getElementById('pcnt').textContent=players.size;}
 function manualAdd(){const inp=document.getElementById('mname');const name=inp.value.trim();if(!name)return;send({type:'add_player',username:name});addPlayerLocal(name);inp.value='';inp.focus();}
 function addDemo(){['Стрімер_UA','Viewer42','CoolKhlopets','Ukr_Gamer','NoName_228','ProPlayer_UA','RandomGuy','ChatAktiv','Khmara2000','NightOwl_UA'].forEach(n=>{send({type:'add_player',username:n});addPlayerLocal(n);});}
 
-// ── Chat ──
 function showChat(name,text){chatN++;document.getElementById('ccnt').textContent=chatN;const cmd=(document.getElementById('cmd').value||'!play').toLowerCase();const isCmd=text.toLowerCase()===cmd;const el=document.createElement('div');el.className='cm '+(isCmd?'join':'chat-msg');el.innerHTML=`<span class="n" style="color:${colFor(name)}">${esc(name)}:</span> ${esc(text)}`;const c=document.getElementById('chat');c.insertBefore(el,c.firstChild);while(c.children.length>150)c.removeChild(c.lastChild);}
 
-// ── UI ──
 function setPill(id,st,txt){const el=document.getElementById('pill-'+id);el.className='pill pill-'+(st==='on'?'on':st==='err'?'err':'off');el.querySelector('span').textContent=txt;}
 function setPhase(cls,txt){const el=document.getElementById('phase');el.className='phase'+(cls?' '+cls:'');el.textContent=txt;}
 function colFor(name){let h=0;for(const c of name)h=c.charCodeAt(0)+((h<<5)-h);return COLS[Math.abs(h)%COLS.length];}
@@ -246,7 +237,9 @@ function clog(text,type='sys'){const el=document.createElement('div');el.classNa
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 updURLs();
-clog('Введи свій Kick канал щоб почати','sys');
+clog('1. Введи канал + Chatroom ID','sys');
+clog('2. Натисни "Підключити до Kick"','sys');
+clog('3. Напиши щось у Kick — має зʼявитись тут','sys');
 </script>
 </body>
 </html>
