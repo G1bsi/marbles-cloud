@@ -1,0 +1,17 @@
+{
+  "name": "marbles-cloud",
+  "version": "1.0.0",
+  "description": "Marbles race Kick chat integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "ws": "^8.16.0"
+  }
+}

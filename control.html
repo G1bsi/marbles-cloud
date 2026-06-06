@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🎮 Marbles — Панель</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600;700&display=swap');
+:root{--bg:#070710;--p:#0d0d1c;--p2:#111125;--b:#1e1e3a;--a:#7c3aed;--a2:#06b6d4;--g:#10b981;--r:#ef4444;--gold:#f59e0b;--tx:#e2e8f0;--mu:#64748b;--m2:#94a3b8;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--tx);font-family:'Rajdhani',sans-serif;min-height:100vh;}
+.top{display:flex;align-items:center;gap:12px;padding:12px 20px;background:var(--p);border-bottom:1px solid var(--b);flex-wrap:wrap;}
+.logo{font-family:'Orbitron',monospace;font-size:15px;font-weight:900;background:linear-gradient(135deg,var(--a),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px;}
+.pill{display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;border:1px solid transparent;}
+.pill-off{background:rgba(100,116,139,.08);border-color:rgba(100,116,139,.2);color:var(--mu);}
+.pill-on{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:var(--g);}
+.pill-err{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--r);}
+.pdot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.wrap{max-width:1100px;margin:0 auto;padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:800px){.wrap{grid-template-columns:1fr;}}
+.card{background:var(--p);border:1px solid var(--b);border-radius:12px;padding:18px;}
+.card-title{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:3px;color:var(--mu);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.card-title b{color:var(--a2);}
+.fld{margin-bottom:12px;}
+.fld label{font-size:11px;letter-spacing:2px;color:var(--mu);text-transform:uppercase;font-family:'Orbitron',monospace;display:block;margin-bottom:4px;}
+input{background:#0a0a18;border:1px solid var(--b);color:var(--tx);padding:10px 12px;border-radius:8px;font-family:'Rajdhani',sans-serif;font-size:15px;outline:none;width:100%;transition:border-color .2s;}
+input:focus{border-color:var(--a);}
+.btn{width:100%;padding:12px 16px;border:none;border-radius:9px;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:8px;}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+.btn:not(:disabled):hover{transform:translateY(-1px);filter:brightness(1.15);}
+.b-open{background:linear-gradient(135deg,var(--g),#059669);color:#fff;}
+.b-start{background:linear-gradient(135deg,var(--a2),#0891b2);color:#000;font-size:12px;}
+.b-reset{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--r);}
+.b-add{background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3);color:var(--a);}
+.phase{padding:10px;border-radius:8px;text-align:center;font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;margin-bottom:12px;background:rgba(100,116,139,.1);color:var(--mu);}
+.phase.open{background:rgba(16,185,129,.12);color:var(--g);}
+.phase.race{background:rgba(6,182,212,.12);color:var(--a2);}
+.phase.done{background:rgba(245,158,11,.12);color:var(--gold);}
+.timer{display:none;align-items:center;justify-content:center;gap:8px;font-family:'Orbitron',monospace;margin-bottom:12px;}
+.timer .v{font-size:28px;font-weight:900;color:var(--a2);}
+.timer .l{font-size:10px;color:var(--mu);}
+.players{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto;}
+.pi{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#0a0a18;border-radius:6px;font-size:14px;}
+.pi-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;box-shadow:0 0 5px currentColor;}
+.pi-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pi-num{font-family:'Orbitron',monospace;font-size:10px;color:var(--mu);}
+.chat{height:260px;overflow-y:auto;display:flex;flex-direction:column-reverse;gap:2px;background:#0a0a18;border-radius:8px;padding:8px;}
+.cm{padding:3px 6px;border-radius:3px;font-size:13px;line-height:1.4;}
+.cm .n{font-weight:700;}
+.cm.join{color:var(--g);background:rgba(16,185,129,.07);}
+.cm.sys{color:var(--a2);font-style:italic;font-size:12px;}
+.cm.chat-msg{color:var(--m2);}
+.madd{display:flex;gap:6px;margin-bottom:8px;}
+.madd input{flex:1;}
+.madd button{padding:10px 14px;background:var(--p2);border:1px solid var(--b);color:var(--m2);border-radius:8px;cursor:pointer;font-size:14px;white-space:nowrap;}
+.madd button:hover{border-color:var(--a);color:var(--a);}
+.urls{background:#0a0a18;border-radius:8px;padding:12px;font-size:12px;line-height:1.8;}
+.urls code{color:var(--a2);background:rgba(6,182,212,.08);padding:2px 6px;border-radius:4px;font-size:11px;word-break:break-all;cursor:pointer;}
+.urls code:hover{background:rgba(6,182,212,.2);}
+.hint{font-size:12px;color:var(--mu);line-height:1.6;margin-top:8px;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--b);border-radius:2px;}
+.div{height:1px;background:var(--b);margin:12px 0;}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo">⬤ MARBLES CONTROL</div>
+  <div class="pill pill-off" id="pill-srv"><div class="pdot"></div><span id="t-srv">СЕРВЕР</span></div>
+  <div class="pill pill-off" id="pill-kick"><div class="pdot"></div><span id="t-kick">KICK</span></div>
+  <div class="pill pill-off" id="pill-reg"><div class="pdot"></div><span id="t-reg">РЕЄСТРАЦІЯ</span></div>
+</div>
+
+<div class="wrap">
+
+  <!-- LEFT: Control -->
+  <div>
+    <div class="card">
+      <div class="card-title">⚙ КЕРУВАННЯ</div>
+
+      <div class="fld">
+        <label>Твій Kick канал</label>
+        <input id="channel" placeholder="твій_нік" />
+      </div>
+      <div class="fld">
+        <label>Команда входу</label>
+        <input id="cmd" value="!play" />
+      </div>
+
+      <div class="phase" id="phase">⬤ ОЧІКУВАННЯ</div>
+      <div class="timer" id="reg-timer"><span class="l">РЕЄСТРАЦІЯ</span><span class="v" id="reg-val">60</span><span class="l">сек</span></div>
+      <div class="timer" id="race-timer"><span class="l">ГОНКА</span><span class="v" id="race-val">65</span><span class="l">сек</span></div>
+
+      <div class="fld">
+        <label>Час реєстрації (сек)</label>
+        <input type="number" id="rtime" value="60" min="10" max="300" />
+      </div>
+
+      <button class="btn b-open" id="b-open" onclick="openReg()">▶ ВІДКРИТИ РЕЄСТРАЦІЮ</button>
+      <button class="btn b-start" id="b-start" onclick="startRace()" disabled>🚀 СТАРТ ГОНКИ</button>
+      <button class="btn b-reset" onclick="resetGame()">↺ СКИНУТИ</button>
+
+      <div class="div"></div>
+      <div class="card-title" style="margin-bottom:8px;">ВРУЧНУ</div>
+      <div class="madd">
+        <input id="mname" placeholder="нік" onkeydown="if(event.key==='Enter')manualAdd()" />
+        <button onclick="manualAdd()">+ Додати</button>
+      </div>
+      <button class="btn b-add" onclick="addDemo()">🧪 Тест гравці</button>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">🔗 ПОСИЛАННЯ ДЛЯ OBS</div>
+      <div class="urls" id="urls">
+        Введи свій канал вище щоб згенерувати посилання
+      </div>
+      <div class="hint">Додай <b>Widget URL</b> як Browser Source в OBS (1280×720)</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Players + Chat -->
+  <div>
+    <div class="card">
+      <div class="card-title">👥 УЧАСНИКИ <b id="pcnt">0</b></div>
+      <div class="players" id="plist"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">💬 KICK ЧАТ <b id="ccnt">0</b></div>
+      <div class="chat" id="chat"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const WS_BASE=location.origin.replace('http','ws');
+const COLS=['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f59e0b','#84cc16','#6366f1','#a78bfa','#fb923c','#34d399','#60a5fa','#f472b6','#4ade80'];
+
+let ws=null,channel='',phase='idle';
+const players=new Map();
+let regT=null,regS=60,raceT=null,raceS=65,chatN=0;
+
+// Pre-fill channel from URL or localStorage
+const urlCh=new URLSearchParams(location.search).get('channel');
+if(urlCh){document.getElementById('channel').value=urlCh;setTimeout(()=>connect(),300);}
+
+document.getElementById('channel').addEventListener('change',()=>{updURLs();connect();});
+document.getElementById('channel').addEventListener('input',updURLs);
+
+function updURLs(){
+  const ch=document.getElementById('channel').value.trim().toLowerCase();
+  if(!ch){document.getElementById('urls').innerHTML='Введи свій канал вище';return;}
+  const widgetUrl=`${location.origin}/widget.html?channel=${ch}`;
+  const ctrlUrl=`${location.origin}/control.html?channel=${ch}`;
+  document.getElementById('urls').innerHTML=`
+    <div style="margin-bottom:8px;"><b style="color:var(--tx)">🎮 Widget (OBS):</b><br><code onclick="copyTxt('${widgetUrl}')">${widgetUrl}</code></div>
+    <div><b style="color:var(--tx)">🎛 Панель:</b><br><code onclick="copyTxt('${ctrlUrl}')">${ctrlUrl}</code></div>
+  `;
+}
+window.copyTxt=(t)=>{navigator.clipboard.writeText(t);clog('📋 Скопійовано!','sys');};
+
+// ── WebSocket ──
+function connect(){
+  channel=document.getElementById('channel').value.trim().toLowerCase();
+  if(!channel)return;
+  if(ws){ws.close();ws=null;}
+  setPill('srv','','⟳ СЕРВЕР...');
+  ws=new WebSocket(`${WS_BASE}/ws?channel=${channel}&role=control`);
+  ws.onopen=()=>{setPill('srv','on','СЕРВЕР ✅');clog('Підключено до сервера','sys');};
+  ws.onclose=()=>{setPill('srv','err','СЕРВЕР ❌');setTimeout(connect,3000);};
+  ws.onerror=()=>{setPill('srv','err','ПОМИЛКА');};
+  ws.onmessage=(e)=>{
+    const m=JSON.parse(e.data);
+    if(m.type==='state'){
+      (m.players||[]).forEach(p=>addPlayerLocal(p.username,p.colorHex));
+      if(m.kickConnected)setPill('kick','on','KICK ✅');
+    }
+    if(m.type==='kick_status'){
+      if(m.status==='connected')setPill('kick','on','KICK ✅');
+      else if(m.status==='connecting')setPill('kick','','⟳ KICK...');
+      else if(m.status==='error')setPill('kick','err','KICK ❌');
+    }
+    if(m.type==='chat'){showChat(m.name,m.text);}
+    if(m.type==='player_join'){addPlayerLocal(m.username,m.colorHex);}
+    if(m.type==='registration_opened'){setPill('reg','on','РЕЄСТРАЦІЯ ✅');}
+    if(m.type==='race_finished'){onRaceEnd(m.order);}
+  };
+}
+function send(obj){if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify(obj));}
+
+// ── Game flow ──
+function openReg(){
+  if(!channel){clog('❌ Введи канал!','sys');return;}
+  if(phase==='racing')return;
+  phase='registration';
+  players.clear();renderPlayers();
+  regS=parseInt(document.getElementById('rtime').value)||60;
+  send({type:'open_registration',cmd:document.getElementById('cmd').value||'!play'});
+  setPhase('open','📋 РЕЄСТРАЦІЯ');
+  setPill('reg','on','РЕЄСТРАЦІЯ ✅');
+  document.getElementById('b-start').disabled=false;
+  document.getElementById('reg-timer').style.display='flex';
+  document.getElementById('reg-val').textContent=regS;
+  clog('Реєстрація відкрита!','sys');
+  clearInterval(regT);
+  regT=setInterval(()=>{regS--;document.getElementById('reg-val').textContent=regS;if(regS<=0){clearInterval(regT);if(players.size>=2)startRace();}},1000);
+}
+function startRace(){
+  if(players.size<1){clog('❌ Немає гравців','sys');return;}
+  clearInterval(regT);phase='racing';
+  send({type:'start_race'});
+  setPhase('race','🏁 ГОНКА');
+  setPill('reg','off','РЕЄСТРАЦІЯ');
+  document.getElementById('b-start').disabled=true;
+  document.getElementById('reg-timer').style.display='none';
+  raceS=65;document.getElementById('race-timer').style.display='flex';document.getElementById('race-val').textContent=raceS;
+  clearInterval(raceT);
+  raceT=setInterval(()=>{raceS--;document.getElementById('race-val').textContent=raceS;if(raceS<=0){clearInterval(raceT);}},1000);
+  clog('🚀 Гонка почалась!','sys');
+}
+function onRaceEnd(order){clearInterval(raceT);phase='finished';setPhase('done','🏆 ФІНІШ');document.getElementById('race-timer').style.display='none';clog('🏁 Фініш!','sys');(order||[]).forEach((n,i)=>clog(`${'🥇🥈🥉'[i]||'▪'} #${i+1} ${n}`,'join'));}
+function resetGame(){clearInterval(regT);clearInterval(raceT);phase='idle';players.clear();renderPlayers();send({type:'reset'});setPhase('','⬤ ОЧІКУВАННЯ');setPill('reg','off','РЕЄСТРАЦІЯ');document.getElementById('b-start').disabled=true;document.getElementById('reg-timer').style.display='none';document.getElementById('race-timer').style.display='none';clog('Скинуто','sys');}
+
+// ── Players ──
+function addPlayerLocal(name,color){
+  if(players.has(name))return;
+  players.set(name,{color:color||COLS[players.size%COLS.length]});
+  renderPlayers();
+}
+function renderPlayers(){
+  const list=document.getElementById('plist');list.innerHTML='';let i=0;
+  players.forEach((d,name)=>{i++;const div=document.createElement('div');div.className='pi';div.innerHTML=`<span class="pi-dot" style="background:${d.color};color:${d.color}"></span><span class="pi-name">${esc(name)}</span><span class="pi-num">#${i}</span>`;list.appendChild(div);});
+  document.getElementById('pcnt').textContent=players.size;
+}
+function manualAdd(){const inp=document.getElementById('mname');const name=inp.value.trim();if(!name)return;send({type:'add_player',username:name});addPlayerLocal(name);inp.value='';inp.focus();}
+function addDemo(){['Стрімер_UA','Viewer42','CoolKhlopets','Ukr_Gamer','NoName_228','ProPlayer_UA','RandomGuy','ChatAktiv','Khmara2000','NightOwl_UA'].forEach(n=>{send({type:'add_player',username:n});addPlayerLocal(n);});}
+
+// ── Chat ──
+function showChat(name,text){chatN++;document.getElementById('ccnt').textContent=chatN;const cmd=(document.getElementById('cmd').value||'!play').toLowerCase();const isCmd=text.toLowerCase()===cmd;const el=document.createElement('div');el.className='cm '+(isCmd?'join':'chat-msg');el.innerHTML=`<span class="n" style="color:${colFor(name)}">${esc(name)}:</span> ${esc(text)}`;const c=document.getElementById('chat');c.insertBefore(el,c.firstChild);while(c.children.length>150)c.removeChild(c.lastChild);}
+
+// ── UI ──
+function setPill(id,st,txt){const el=document.getElementById('pill-'+id);el.className='pill pill-'+(st==='on'?'on':st==='err'?'err':'off');el.querySelector('span').textContent=txt;}
+function setPhase(cls,txt){const el=document.getElementById('phase');el.className='phase'+(cls?' '+cls:'');el.textContent=txt;}
+function colFor(name){let h=0;for(const c of name)h=c.charCodeAt(0)+((h<<5)-h);return COLS[Math.abs(h)%COLS.length];}
+function clog(text,type='sys'){const el=document.createElement('div');el.className='cm '+type;el.textContent=text;const c=document.getElementById('chat');c.insertBefore(el,c.firstChild);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+updURLs();
+clog('Введи свій Kick канал щоб почати','sys');
+</script>
+</body>
+</html>
